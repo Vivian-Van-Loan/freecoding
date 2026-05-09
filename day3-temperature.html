@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Temperature Converter</title>
+
+    <style>
+        body {
+            background-color: #2a2a2e;
+            color: #e8e0ff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        div {
+            padding: 10px;
+        }
+    </style>
+
+    <script>
+        const UNITS = ["Celsius", "Kelvin", "Fahrenheit", "Rankine", "Réaumur", "Rømer", "Newton", "Wedgwood", "Galen", "Celsius Original", "Dalton", "XKCD", "Felsius"];
+        document.addEventListener("DOMContentLoaded", function () {
+            var select1 = document.getElementById("input-unit");
+            var select2 = document.getElementById("output-unit");
+            UNITS.forEach(function (unit) {
+                var option1 = document.createElement("option");
+                option1.value = unit;
+                option1.textContent = unit;
+                select1.appendChild(option1);
+                var option2 = document.createElement("option");
+                option2.value = unit;
+                option2.textContent = unit;
+                select2.appendChild(option2);
+            });
+            select1.value = "Celsius";
+            select2.value = "Kelvin";
+        });
+
+        function cToK(celsius) {
+            return celsius + 273.15;
+        }
+
+        function fToK(fahrenheit) {
+            return ((fahrenheit - 32) / 1.8) + 273.15;
+        }
+
+        function rToK(rankine) {
+            return rankine / 1.8;
+        }
+
+        function réaumurToK(réaumur) {
+            return réaumur * 1.25 + 273.15;
+        }
+
+        function rømerToK(rømer) {
+            return (rømer - 7.5) * 1.9047619 + 273.15;
+        }
+
+        function nToK(newton) {
+            return (newton * (3 + 1/33)) + 273.15;
+        }
+
+        function wedgwoodToK(wedgwood) {
+            return cToK((wedgwood + 8) * (100/1.3));
+        }
+
+        function galenToK(galen) {
+            if (galen <= 0) {
+                return cToK(22 * (galen + 4) / 4);
+            }
+            return cToK(78 * galen / 4 + 22);
+        }
+
+        function ogCToK(ogCelsius) {
+            return cToK(100 - ogCelsius);
+        }
+
+        function daltonToK(dalton) {
+            return 273.15 * Math.exp(dalton / 320.55);
+        }
+
+        function xkcdToK(xkcd) {
+            if (xkcd < 50) {
+                return cToK((xkcd - 42.9) / 0.48);
+            }
+            return cToK((xkcd - 32.4) / 1.19);
+        }
+
+        function felsiusToK(felsius) {
+            return cToK((felsius - 16) / 1.4);
+        }
+
+
+
+        function kToK(kelvin) {
+            return kelvin;
+        }
+
+        function kToC(kelvin) {
+            return kelvin - 273.15;
+        }
+
+        function kToF(kelvin) {
+            return ((kelvin - 273.15) * 1.8) + 32;
+        }
+
+        function kToR(kelvin) {
+            return (kelvin) * 1.8;
+        }
+
+        function kToRéaumur(kelvin) {
+            return (kelvin - 273.15) / 1.25;
+        }
+
+        function kToRømer(kelvin) {
+            return ((kelvin - 273.15) / 1.9047619) + 7.5;
+        }
+
+        function kToN(kelvin) {
+            return (kelvin - 273.15) / (3 + 1/33);
+        }
+
+        function kToWedgwood(kelvin) {
+            if (kToC(kelvin) === 100) {
+                return "-🫴.🫴";
+            }
+            return (kToC(kelvin) / (100/1.3)) - 8;
+        }
+
+        function kToGalen(kelvin) {
+            var celsius = kToC(kelvin);
+            if (celsius <= 22) {
+                return 4 * celsius / 22 - 4;
+            }
+            return 4 * (celsius - 22) / 78;
+        }
+
+        function kToOGC(kelvin) {
+            return 100 - kToC(kelvin);
+        }
+
+        function kToDalton(kelvin) {
+            return 320.55 * Math.log((kelvin) / 273.15);
+        }
+
+        function kToXKCD(kelvin) {
+            var celsius = kToC(kelvin);
+            if (celsius < 14.8) {
+                return (0.48 * celsius + 42.9);
+            }
+            return 1.19 * celsius + 32.4;
+        }
+
+        function kToFelsius(kelvin) {
+            return kToC(kelvin) * (7/5) + 16;
+        }
+
+        const CONVERT_MAP_INPUT = {Celsius: cToK, Kelvin: kToK, Fahrenheit: fToK, Réaumur: réaumurToK, Rømer: rømerToK, Rankine: rToK, Newton: nToK, Wedgwood: wedgwoodToK, Galen: galenToK, "Celsius Original": ogCToK, Dalton: daltonToK, XKCD: xkcdToK, Felsius: felsiusToK};
+        const CONVERT_MAP_OUTPUT = {Celsius: kToC, Kelvin: kToK, Fahrenheit: kToF, Réaumur: kToRéaumur, Rømer: kToRømer, Rankine: kToR, Newton: kToN, Wedgwood: kToWedgwood, Galen: kToGalen, "Celsius Original": kToOGC, Dalton: kToDalton, XKCD: kToXKCD, Felsius: kToFelsius};
+
+        function convertTemperature() {
+            var inputTemperature = document.getElementById("temperature").value;
+            var inputUnit = document.getElementById("input-unit").value;
+            var outputUnit = document.getElementById("output-unit").value;
+            var resultElement = document.getElementById("result");
+
+            if (inputTemperature === "") {
+                inputTemperature = 0;
+            }
+            inputTemperature = Number(inputTemperature);
+
+            var kelvin = CONVERT_MAP_INPUT[inputUnit](inputTemperature);
+            var convertedTemperature = CONVERT_MAP_OUTPUT[outputUnit](kelvin);
+
+            resultElement.textContent = `${inputTemperature} ${inputUnit} is equal to ${convertedTemperature} ${outputUnit}`;
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Temperature Converter</h1>
+    <div id="input-container">
+        <label for="temperature">Enter Temperature:</label>
+        <input type="number" id="temperature" placeholder="0">
+<!--        <label for="input-unit">Input Unit: </label>-->
+        <label for="input-unit">°</label>
+            <select id="input-unit"></select>
+    </div>
+    <div id="output-container">
+        <label for="output-unit">Output Unit: °</label>
+        <select id="output-unit"></select>
+        <p id="result"></p>
+    </div>
+    <button onclick="convertTemperature()">Convert</button>
+
+    <div>
+        <a href="https://xkcd.com/3001/">XKCD Temperature Scale<br>
+            <img src="https://imgs.xkcd.com/comics/temperature_scales.png" alt="In my new scale, °X, 0 is Earths' record lowest surface temperature, 50 is the global average, and 100 is the record highest, with a linear scale between each point and adjustment every year as needed." title="In my new scale, °X, 0 is Earths' record lowest surface temperature, 50 is the global average, and 100 is the record highest, with a linear scale between each point and adjustment every year as needed.">
+        </a>
+    </div>
+
+</body>
+</html>
