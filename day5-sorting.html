@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SORTING</title>
+
+    <style>
+        html, body {
+            width:  100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            /*overflow: hidden;*/
+        }
+        body {
+            background-color: #2a2a2e;
+            color: #e8e0ff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        canvas {
+            /*border: 1px solid black;*/
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <script>
+        function randRange(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        const ARRAY_SIZE = 500;
+        class SortableArray {
+            constructor() {
+                this.array = [];
+                for (let i = 0; i < ARRAY_SIZE; i++) {
+                    this.array.push(i + 1);
+                }
+                this.shuffle();
+                // this.array.sort((a, b) => b-a);
+                this.swaps = 0;
+                this.comparisons = 0;
+            }
+
+            shuffle() { //https://stackoverflow.com/a/2450976
+                let currentIndex = this.array.length;
+                // While there remain elements to shuffle...
+                while (currentIndex !== 0) {
+                    // Pick a remaining element...
+                    let randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex--;
+                    // And swap it with the current element.
+                    [this.array[currentIndex], this.array[randomIndex]] = [
+                        this.array[randomIndex], this.array[currentIndex]];
+                }
+            }
+
+            swap(i, j) {
+                this.swaps++;
+                [this.array[i], this.array[j]] = [this.array[j], this.array[i]];
+            }
+
+            compare(i, j) {
+                this.comparisons++;
+                return this.array[i] - this.array[j];
+            }
+
+            less(i, j) {
+                this.comparisons++;
+                return this.array[i] < this.array[j];
+            }
+
+            greater(i, j) {
+                this.comparisons++;
+                return this.array[i] > this.array[j];
+            }
+
+            // bubbleSort() {
+            //     function outerLoop(s, i) {
+            //         function innerLoop(s, j) {
+            //             function sortCompare(s, i, j) {
+            //                 function sortSwap(s, i, j) {
+            //                     s.drawSwap(i, j);
+            //                     s.swap(i, j);
+            //                 }
+            //                 s.drawCompare(i, j);
+            //                 if (s.greater(i, j) > 0) {
+            //                     s.swap(i, j);
+            //                 }
+            //             }
+            //             if (j >= s.array.length - i - 1) {
+            //                 return;
+            //             }
+            //             requestAnimationFrame(() => {
+            //                 sortCompare(j, j + 1);
+            //             })
+            //         }
+            //         if (i >= s.array.length) {
+            //             return;
+            //         }
+            //         requestAnimationFrame(() => {
+            //             innerLoop(s, 0);
+            //             outerLoop(s, i + 1);
+            //         })
+            //     }
+            // }
+
+            getRectDimensions(ctx, i) {
+                const width = ctx.canvas.width;
+                const height = ctx.canvas.height;
+                const rectWidth = (width / ARRAY_SIZE);
+                const rectHeight = (this.array[i] / ARRAY_SIZE * height);
+                return {
+                    x: i * rectWidth,
+                    y: height - rectHeight,
+                    width: rectWidth,
+                    height: rectHeight
+                }
+            }
+
+            drawArray() {
+                const canvas = document.getElementById("canvas");
+                const ctx = canvas.getContext("2d");
+                ctx.canvas.width = 2000;
+                ctx.canvas.height = 1000;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = 0; i < this.array.length; i++) {
+                    // console.log(this.array[i]);
+                    ctx.fillStyle = "hsl(" + (this.array[i] / ARRAY_SIZE * 360) + " 100% 50%)";
+                    let rectDims = this.getRectDimensions(ctx, i);
+                    ctx.fillRect(rectDims.x, rectDims.y, rectDims.width, rectDims.height);
+                }
+            }
+
+            drawCompare(i, j, sortGenerator) {
+                this.drawArray();
+
+                // const canvas = document.getElementById("canvas");
+                // const ctx = canvas.getContext("2d");
+                // let rectDimsI = this.getRectDimensions(ctx, i);
+                // let rectDimsJ = this.getRectDimensions(ctx, j);
+                //
+                // ctx.fillStyle = "rgb(255 0 0 / 50%)";
+                // ctx.fillRect(rectDimsI.x, 0, rectDimsI.width, ctx.canvas.height);
+                // ctx.fillRect(rectDimsJ.x, 0, rectDimsJ.width, ctx.canvas.height);
+
+                this.runSort(sortGenerator, new NoSwap());
+            }
+
+            runSort(sortGenerator, value) {
+                // console.log(value);
+                let next = sortGenerator.next(value);
+                if (value instanceof Done || next.done) {
+                    requestAnimationFrame(() => {
+                        this.drawArray();
+                        console.log("Swaps: " + this.swaps + " Comparisons: " + this.comparisons);
+                    });
+                    return;
+                }
+                let val = next.value;
+                if (val instanceof Swap) {
+                    requestAnimationFrame(() => {
+                        this.drawArray();
+                        this.runSort(sortGenerator, val);
+                    })
+                } else {
+                    this.runSort(sortGenerator, val);
+                }
+            }
+        }
+
+        class NoSwap {}
+
+        class Comparison {
+            constructor(i, j) {
+                this.i = i;
+                this.j = j;
+            }
+        }
+
+        class Swap {
+            constructor(i, j) {
+                this.i = i;
+                this.j = j;
+            }
+        }
+
+        class Done {}
+
+        function* bubbleSort(arr) {
+            let n = arr.array.length;
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n - i - 1; j++) {
+                    yield new Comparison(j, j + 1);
+                    if (arr.greater(j, j + 1)) {
+                        yield new Swap(j, j + 1);
+                        arr.swap(j, j + 1);
+                    }
+                }
+            }
+            return new Done();
+        }
+
+        function* cocktailShakerSort(arr) {
+            let swapped = true;
+            while (swapped) {
+                swapped = false;
+                for (let i = 0; i < arr.array.length - 1; i++) {
+                    yield new Comparison(i, i + 1);
+                    if (arr.greater(i, i + 1)) {
+                        yield new Swap(i, i + 1);
+                        arr.swap(i, i + 1);
+                        swapped = true;
+                    }
+                }
+                for (let i = arr.array.length - 1; i > 0; i--) {
+                    yield new Comparison(i, i - 1);
+                    if (arr.less(i, i - 1)) {
+                        yield new Swap(i, i - 1);
+                        arr.swap(i, i - 1);
+                    }
+                }
+            }
+            return new Done();
+        }
+
+        function* insertionSort(arr) {
+            for (let i = 1; i < arr.array.length; i++) {
+                let j = i;
+                yield new Comparison(j - 1, j);
+                while (j > 0 && arr.greater(j - 1, j)) {
+                    yield new Swap(j - 1, j);
+                    arr.swap(j - 1, j);
+                    j--;
+                }
+            }
+        }
+
+        function* selectionSort(arr) {
+            for (let i = 0; i < arr.array.length; i++) {
+                let min = i;
+                for (let j = i + 1; j < arr.array.length; j++) {
+                    yield new Comparison(min, j);
+                    if (arr.less(j, min)) {
+                        min = j;
+                    }
+                }
+                if (min !== i) {
+                    yield new Swap(i, min);
+                    arr.swap(i, min);
+                }
+            }
+        }
+
+        function* quickSort(arr, low = 0, high = arr.array.length - 1) {
+            function* partition(arr, low, high) {
+                // let pivot = high;
+                let pivot = randRange(low, high);
+                if (pivot !== high) { //Move pivot to end
+                    yield new Swap(pivot, high);
+                    arr.swap(pivot, high);
+                    pivot = high;
+                }
+                let i = low;
+
+                for (let j = low; j < high; j++) {
+                    yield new Comparison(j, pivot);
+                    if (arr.less(j, pivot)) {
+                        if (i !== j) {
+                            yield new Swap(i, j);
+                            arr.swap(i, j);
+                        }
+                        i++;
+                    }
+                }
+
+                if (i !== high) {
+                    yield new Swap(i, high);
+                    arr.swap(i, high);
+                }
+                return i;
+            }
+
+            if (low < high) {
+                let pivotIndex = yield* partition(arr, low, high);
+
+                yield* quickSort(arr, low, pivotIndex - 1);
+                yield* quickSort(arr, pivotIndex + 1, high);
+            }
+
+            if (low === 0 && high === arr.array.length - 1) {
+                return new Done();
+            }
+        }
+
+        function* heapSort(arr) {
+            function* heapify(arr, heapSize, root) {
+                let largest = root;
+                let left = 2 * root + 1;
+                let right = 2 * root + 2;
+
+                if (left < heapSize) {
+                    yield new Comparison(left, largest);
+
+                    if (arr.greater(left, largest)) {
+                        largest = left;
+                    }
+                }
+
+                if (right < heapSize) {
+                    yield new Comparison(right, largest);
+
+                    if (arr.greater(right, largest)) {
+                        largest = right;
+                    }
+                }
+
+                if (largest !== root) {
+                    yield new Swap(root, largest);
+                    arr.swap(root, largest);
+
+                    yield* heapify(arr, heapSize, largest);
+                }
+            }
+
+            let n = arr.array.length;
+
+            // Build max heap
+            for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+                yield* heapify(arr, n, i);
+            }
+
+            // Extract elements from heap
+            for (let i = n - 1; i > 0; i--) {
+                yield new Swap(0, i);
+                arr.swap(0, i);
+
+                yield* heapify(arr, i, 0);
+            }
+
+            return new Done();
+        }
+
+        function* iCantBelieveItSorts(arr) {
+            let n = arr.array.length;
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    yield new Comparison(i, j);
+                    if (arr.less(i, j)) {
+                        yield new Swap(i, j);
+                        arr.swap(i, j);
+                    }
+                }
+            }
+        }
+
+        // function* radixSortLSDBase2(arr) {
+        //     let n = arr.array.length;
+        //     // Find maximum value to determine number of bits needed
+        //     let max = Math.max(...arr.array);
+        //     // Process each bit from least-significant to most-significant
+        //     for (let bit = 0; (1 << bit) <= max; bit++) {
+        //         let zeroCount = 0;
+        //         // Count zeros for this bit
+        //         for (let i = 0; i < n; i++) {
+        //             yield new Comparison(i, i);
+        //             if (((arr.array[i] >> bit) & 1) === 0) {
+        //                 zeroCount++;
+        //             }
+        //         }
+        //         // Stable in-place partition by current bit
+        //         let target = 0;
+        //         while (target < zeroCount) {
+        //             yield new Comparison(target, target);
+        //             // Already a 0-bit value in correct region
+        //             if (((arr.array[target] >> bit) & 1) === 0) {
+        //                 target++;
+        //                 continue;
+        //             }
+        //             // Find next 0-bit value to rotate forward
+        //             let j = target + 1;
+        //             while (j < n) {
+        //                 yield new Comparison(j, target);
+        //
+        //                 if (((arr.array[j] >> bit) & 1) === 0) {
+        //                     break;
+        //                 }
+        //
+        //                 j++;
+        //             }
+        //             // No more zero-bit values
+        //             if (j >= n) {
+        //                 break;
+        //             }
+        //             // Rotate element at j into position target
+        //             while (j > target) {
+        //                 yield new Swap(j - 1, j);
+        //                 arr.swap(j - 1, j);
+        //                 j--;
+        //             }
+        //             target++;
+        //         }
+        //     }
+        //     return new Done();
+        // }
+
+        let arr = new SortableArray();
+        window.addEventListener("load", function(){
+            arr.drawArray();
+        });
+        let count = 0;
+        window.addEventListener("click", (e) => {
+            if (count % 2 === 0) {
+                arr.runSort(iCantBelieveItSorts(arr), new NoSwap());
+            } else {
+                arr = new SortableArray();
+                arr.drawArray();
+            }
+            count++;
+        })
+    </script>
+</head>
+<body>
+    <canvas id="canvas" width="1920" height="1080"></canvas>
+</body>
+</html>
